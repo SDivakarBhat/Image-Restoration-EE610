@@ -33,10 +33,11 @@ class ImageRestorationClass(QMainWindow):
 	currentImage = [0]
     # stores the previous image for use in Undo operation
 	previousImage = [0]
-
+#stores the kernel
 	kernel = [0]
+	  # stores a copy of image being blurred
 	imageBlur = [0]
-    # stores a copy of image being blurred
+  
 #    imageBlur = [0]
     # stores a copy of image being sharpened
  #   imageSharpen = [0]
@@ -44,6 +45,7 @@ class ImageRestorationClass(QMainWindow):
     # stores current image height and width
 	imageWidth = 0
 	imageHeight = 0
+	# Initialise metric variables
 	PSNR = 0
 	SSIM = 0
 	PSNR1 = 0
@@ -91,10 +93,7 @@ class ImageRestorationClass(QMainWindow):
 
     # called when Open button is clicked
 	def open_image(self):
-        # set_default_slider function resets blur and sharpen sliders to initial
-        # position
-        #self.set_default_slider()
-
+      
         # open a new Open Image dialog box and capture path of file selected
 		open_image_window = QFileDialog()
 		image_path = QFileDialog.getOpenFileName\
@@ -121,15 +120,13 @@ class ImageRestorationClass(QMainWindow):
             # displayImage converts current image from ndarry format to
             # pixmap and assigns it to image display label
 			self.displayImage()
-            # enable_options enable all buttons and sliders in the window.
+            
             # Only Open button is enabled on start
 			self.enable_options()
 
     # called when Open button is clicked
 	def open_kernel(self):
-        # set_default_slider function resets blur and sharpen sliders to initial
-        # position
-        #self.set_default_slider()
+        
 
         # open a new Open Image dialog box and capture path of file selected
 		open_image_window = QFileDialog()
@@ -150,14 +147,7 @@ class ImageRestorationClass(QMainWindow):
 			self.imageWidth = self.currentImage.shape[1]
 			self.imageHeight = self.currentImage.shape[0]
 
-            #self.kernel = self.currentImage.copy()
-            #self.previousImage = self.currentImage.copy()
-
-            # displayImage converts current image from ndarry format to
-            # pixmap and assigns it to image display label
-            #self.displayImage()
-            # enable_options enable all buttons and sliders in the window.
-            # Only Open button is enabled on start
+            
 		self.enable_options()
 
     # called when Save button is clicked
@@ -176,18 +166,16 @@ class ImageRestorationClass(QMainWindow):
 			save_image_filename = dialog.selectedFiles()[0]
             # write current image to the file path selected by user
 			cv2.imwrite(save_image_filename,self.currentImage)
-    # called when Histogram Equalization button is clicked
+    # called when Blur button is clicked
 	def Blur(self):
         # updatePreviousImage function updates the previous image class variable
         #  with current image
 		self.updatePreviousImage()
         # update current operation code class variable
 		self.currentOperationCode = 0
-        # set_default_slider function resets blur and sharpen sliders to initial
-        #  position
-      #  self.set_default_slider()
+       
 		
-        # update V channel of the current image with histogram equallized matrix
+        #Blur the originalimage using the selected blur kernel
 		self.currentImage = self.imageLib.Blur(self.originalImage, self.kernel)
 		self.blurImage = self.currentImage
 		self.PSNR1 = self.imageLib.psnr(self.originalImage, self.currentImage)
@@ -201,18 +189,15 @@ class ImageRestorationClass(QMainWindow):
         # displayImage converts current image from ndarry format to pixmap
         # and assigns it to image display label
 		self.displayImage_1()
-
+ # called when Full Inverse button is clicked
 	def full_inv(self):
         # updatePreviousImage function updates the previous image class
         # variable with current image
 		self.updatePreviousImage()
         # update current operation code class variable
 		self.currentOperationCode = 1
-        # set_default_slider function resets blur and sharpen sliders to
-        # initial position
-       # self.set_default_slider()
-
-        # open gamma input dialog box and wait for dialog box to exit
+       
+        #find the full inverse by dividing the FFT of image by FFT of kernel
      
 		self.currentImage = self.imageLib.full_inv(self.blurImage, self.kernel)
 		self.PSNR1 = self.imageLib.psnr(self.originalImage, self.currentImage)
@@ -226,26 +211,24 @@ class ImageRestorationClass(QMainWindow):
         # displayImage converts current image from ndarry format to pixmap
         # and assigns it to image display label
 		self.displayImage_1()
-
+ # called when Truncated Inverse button is clicked
 	def truncated_inv(self):
         # updatePreviousImage function updates the previous image class
         # variable with current image
 		self.updatePreviousImage()
         # update current operation code class variable
 		self.currentOperationCode = 2
-        # set_default_slider function resets blur and sharpen sliders to
-        # initial position	
-        #self.set_default_slider()
+        
 
 	 # open d0 input dialog box and wait for dialog box to exit
 		if self.newDialog.exec() == 0:
-            # read gamma value from gamma input dialog box class
+            # read d0 value from  input dialog box class
 			d0 = self.newDialog.gamma
-            # reset the value of gamma in gamma input dialog box to 1
+            # reset the value of d0 in  input dialog box to 1
 			self.newDialog.gammaInput.setText('10.00')
 			self.newDialog.gamma = 10.0
-            # perform gamma correction for positive gamma values
-            # gamma range is restricted to 0 to 10 in the gamma input
+            # perform truncated invesre for positive d0 values
+            # d0 range is restricted to 0 to 1000 in the  input
             # dialog box
 			if d0 > 0:
 				self.currentImage = self.imageLib.truncated_inv(self.blurImage, self.kernel, d0)
@@ -260,24 +243,23 @@ class ImageRestorationClass(QMainWindow):
         # displayImage converts current image from ndarry format to
         # pixmap and assigns it to image display label
 		self.displayImage_1()
-
+		
+ # called when Wiener button is clicked
 	def wiener(self):
         # updatePreviousImage function updates the previous image class
         # variable with current image
 		self.updatePreviousImage()
         # update current operation code class variable
 		self.currentOperationCode = 3
-        # set_default_slider function resets blur and sharpen sliders to
-        # initial position
-        #self.set_default_slider()
+       # open lambda input dialog box and wait for dialog box to exit
 		if self.newDialog.exec() == 0:
-            # read gamma value from gamma input dialog box class
+            # read lambda value from  input dialog box class
 			lambd = self.newDialog.gamma
-            # reset the value of gamma in gamma input dialog box to 1
+            # reset the value of lambda in  input dialog box to 0.05
 			self.newDialog.gammaInput.setText('0.05')
 			self.newDialog.gamma = 0.05
-            # perform gamma correction for positive gamma values
-            # gamma range is restricted to 0 to 10 in the gamma input
+            # perform wiener filtering for positive lambda values
+            # lambda range is restricted to 0 to 1000 in the  input
             # dialog box
 		if lambd > 0:
         # update current image with wiener restored image
@@ -294,48 +276,28 @@ class ImageRestorationClass(QMainWindow):
         # displayImage converts current image from ndarry format to pixmap
         # and assigns it to image display label
 		self.displayImage_1()
-
+ # called when constrained least square button is clicked
 	def cls(self):
         # updatePreviousImage function updates the previous image class
         # variable with current image
 		self.updatePreviousImage()
 
-        # disconnect, initialize and reconnect the sharpen slider value
-        # changed event
-        # this is to avoid calling of sharpen function when sharpen slider
-        # value is reset
-        #self.ui.sharpenExtendInputSlider.valueChanged.disconnect()
-        #self.ui.sharpenExtendInputSlider.setValue(0)
-        #self.ui.sharpenExtendInputSlider.valueChanged.connect(lambda:
-         #                                                     self.sharpen())
-        #self.ui.sharpenValueLabel.setText('0')
-
-        # read current blur value from slider and compute blur window size as
-        # (2 * slider value + 1)
-        #blur_value = int(np.floor(self.ui.blurExtendInputSlider.value()))
-        #blur_window_size = (blur_value * 2) + 1
-
-        # if the operation being performed currently is blur, use initial image
-        # passed to blur function
-        # else set current image as initial image for blur
-        #if self.currentOperationCode == 4:
-         #   self.currentImage = self.imageBlur.copy()
-        #else:
-         #   self.imageBlur = self.currentImage.copy()
+       
+        # open gamma input dialog box and wait for dialog box to exit
 		if self.newDialog.exec() == 0:
             # read gamma value from gamma input dialog box class
 			gamma = self.newDialog.gamma
-            # reset the value of gamma in gamma input dialog box to 1
-			self.newDialog.gammaInput.setText('0.00001')
+            # reset the value of gamma in gamma input dialog box to 0.00000001
+			self.newDialog.gammaInput.setText('0.00000001')
 			self.newDialog.gamma = 0.00001
-            # perform gamma correction for positive gamma values
+            # perform constrained least square filtering for positive gamma values
             # gamma range is restricted to 0 to 10 in the gamma input
             # dialog box
            
 		if gamma > 0:
             # enable undo button
 			self.ui.pushButton_9.setEnabled(True)
-            # update V channel of the current image with blurred V matrix
+            # perfor, constrained least square filtering
 			self.currentImage = self.imageLib.cls(self.blurImage, self.kernel, gamma)
 			self.PSNR1 = self.imageLib.psnr(self.originalImage, self.currentImage)
 			self.PSNR = self.imageLib.psnr(self.originalImage, self.blurImage)
@@ -348,19 +310,19 @@ class ImageRestorationClass(QMainWindow):
         # update current operation code class variable
 		self.currentOperationCode = 4
 
-        #self.ui.blurValueLabel.setText(str(blur_value))
+        
         # displayImage converts current image from ndarry format to pixmap and
         # assigns it to image display label
 		self.displayImage_1()
 
-
+         # called when undo button is clicked
 	def undo(self):
 		self.ui.pushButton_9.setEnabled(False)
 		self.currentImage = self.previousImage.copy()
         # displayImage converts current image from ndarry format to pixmap and
         # assigns it to image display label
 		self.displayImage_1()
-
+         # called when undo all button is clicked
 	def undoAll(self):
         # set_default_slider function resets blur and sharpen sliders to initial
         # position
@@ -370,7 +332,7 @@ class ImageRestorationClass(QMainWindow):
         # assigns it to image display label
 		self.displayImage__1()
 		self.ui.pushButton_10.setEnabled(False)
-
+        # called when view kernel button is clicked
 	def view_kernel(self):
         # count the no of values corresponding to each value in the V channel of
         # image matrix give a minimum length of 256 to the counting to ensure all 256 pixel
